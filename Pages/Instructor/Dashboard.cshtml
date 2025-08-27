@@ -1,0 +1,755 @@
+@page
+@model ClassroomReservationSystem.Pages.Instructor.DashboardModel
+@{
+    ViewData["Title"] = "Instructor Panel";
+}
+
+<div class="container-fluid px-4 py-5">
+    <div class="row align-items-center justify-content-between">
+        <div class="col-lg-7" style=" ">
+            <div class="card">
+                <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between"
+                    style=" height: 60px;">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-square me-2"></i>Reservation Summary
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <div class="me-4 d-flex align-items-center">
+                            <div class="stat-circle bg-primary bg-opacity-10 me-2">
+                                <i class="bi bi-calendar-check text-primary"></i>
+                            </div>
+                            <span><strong>@Model.MyReservations.Count(r => r.Status == "Approved")</strong> Approved
+                                Reservations</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="stat-circle bg-warning bg-opacity-10 me-2">
+                                <i class="bi bi-hourglass-split text-warning"></i>
+                            </div>
+                            <span><strong>@Model.MyReservations.Count(r => r.Status == "Pending")</strong> Pending
+                                Reservations</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-auto" style=" height: 60px;">
+            <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#reservationModal">
+                <i class="bi bi-plus-circle me-2"></i>New Reservation
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert alert-info alert-dismissible fade show shadow-sm border-start border-info border-4"
+                    role="alert">
+                    <i class="bi bi-info-circle me-2"></i> @Model.Message
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-start border-success border-4"
+                    role="alert">
+                    <i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card " shadow-sm border-0 rounded-3 mb-4"">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calendar3 me-2" ></i>Reservation Calendar
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="calendar" class="fc-overflow"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 mt-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-list-check me-2"></i>My Reservations
+            </h5>
+            <div class="input-group w-25">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="reservationSearch" class="form-control border-start-0" placeholder="Search...">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="reservationsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Classroom</th>
+                            <th>Activity</th>
+                            <th>Day</th>
+                            <th>Date Info</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reservation in Model.PaginatedReservations.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="fw-medium">@reservation.Classroom.Name</span>
+                                </td>
+                                <td>@reservation.Activity</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">@reservation.DayOfWeek.ToString("G")</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @reservation.TermStartDate.ToString("dd/MM/yyyy") -
+                                        @reservation.TermEndDate.ToString("dd/MM/yyyy")
+                                    </small>
+                                </td>
+                                <td>@reservation.StartTime.ToString(@"hh\:mm") - @reservation.EndTime.ToString(@"hh\:mm")
+                                </td>
+                                <td>
+                                    @if (reservation.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle me-1"></i>
+                                            @reservation.Status</span>
+                                    }
+                                    else if (reservation.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill"><i
+                                                class="bi bi-hourglass-split me-1"></i> @reservation.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>
+                                            @reservation.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (reservation.Status == "Pending" || reservation.Status == "Approved")
+                                    {
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
+                                                data-bs-target="#modifyModal-@reservation.Id">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <form method="post" asp-page-handler="RequestCancellation"
+                                                asp-route-id="@reservation.Id"
+                                                onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mb-0">
+                @if (Model.PaginatedReservations.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-page="./Dashboard"
+                            asp-route-currentPage="@(Model.PaginatedReservations.PageIndex - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="bi bi-chevron-left"></i>
+                        </span>
+                    </li>
+                }
+
+                @for (var i = 1; i <= Model.PaginatedReservations.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PaginatedReservations.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-page="./Dashboard" asp-route-currentPage="@i">@i</a>
+                    </li>
+                }
+
+                @if (Model.PaginatedReservations.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-page="./Dashboard"
+                            asp-route-currentPage="@(Model.PaginatedReservations.PageIndex + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="bi bi-chevron-right"></i>
+                        </span>
+                    </li>
+                }
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Total @Model.PaginatedReservations.TotalPages pages
+            </small>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reservationModal" tabindex="-1" aria-labelledby="reservationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-calendar-plus me-2"></i>Create New Reservation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Input.ClassroomId" class="form-label">Classroom</label>
+                            <select asp-for="Input.ClassroomId" class="form-select form-select-lg" required>
+                                <option value="">Select Classroom</option>
+                                @foreach (var classroom in Model.AvailableClassrooms)
+                                {
+                                    <option value="@classroom.Id">@classroom.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Input.Activity" class="form-label">Activity/Course Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-book"></i>
+                                </span>
+                                <input asp-for="Input.Activity" class="form-control form-control-lg" type="text"
+                                    placeholder="For example: Ceng241" required />
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Input.DayOfWeek" class="form-label">Day</label>
+                            <select asp-for="Input.DayOfWeek" class="form-select" required>
+                                @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                                {
+                                    <option value="@((int)day)">@day.ToString("G")</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Input.StartTime" class="form-label">Start Time</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-clock"></i>
+                                </span>
+                                <input asp-for="Input.StartTime" class="form-control" type="time" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Input.EndTime" class="form-label">End Time</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-clock-history"></i>
+                                </span>
+                                <input asp-for="Input.EndTime" class="form-control" type="time" required />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i>Reserve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@foreach (var reservation in Model.MyReservations.Where(r => r.Status == "Pending" || r.Status == "Approved"))
+{
+    <div class="modal fade" id="modifyModal-@reservation.Id" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form method="post" asp-page-handler="RequestModification">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="bi bi-pencil-square me-2"></i>Reservation Modification
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="id" value="@reservation.Id" />
+
+                        <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-info-circle fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small>
+                                        <strong>Classroom:</strong> @reservation.Classroom.Name<br>
+                                        <strong>Activity:</strong> @reservation.Activity
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Day</label>
+                            <select name="newDayOfWeek" class="form-select" required>
+                                @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                                {
+                                    <option value="@((int)day)" selected="@(day == reservation.DayOfWeek)">
+                                        @day.ToString("G")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Start Time</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-clock"></i>
+                                        </span>
+                                        <input name="newStartTime" type="time" class="form-control"
+                                            value="@reservation.StartTime.ToString(@"hh\:mm")" required />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">End Time</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-clock-history"></i>
+                                        </span>
+                                        <input name="newEndTime" type="time" class="form-control"
+                                            value="@reservation.EndTime.ToString(@"hh\:mm")" required />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check2 me-1"></i>Request Modification
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="eventDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle me-2"></i>Reservation Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="event-status-indicator me-3"></div>
+                            <h4 class="event-title mb-0"></h4>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Classroom</label>
+                        <p class="event-classroom mb-0 fw-medium"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Status</label>
+                        <p class="event-status mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Start</label>
+                        <p class="event-start mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">End</label>
+                        <p class="event-end mb-0"></p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted">Term</label>
+                        <p class="event-term mb-0"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning modify-btn" style="display:none;">
+                    <i class="bi bi-pencil-square me-1"></i>Request Modification
+                </button>
+                <button type="button" class="btn btn-danger cancel-btn" style="display:none;">
+                    <i class="bi bi-trash me-1"></i>Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css' rel='stylesheet' />
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.print.min.css' rel='stylesheet'
+        media='print' />
+    <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css' rel='stylesheet' />
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/tr.js'></script>
+
+    <style>
+        .stat-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-circle i {
+            font-size: 24px;
+        }
+
+        .fc-event {
+            margin: 2px 0;
+            padding: 4px 8px !important;
+            border: none !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .fc-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .fc-time-grid-event {
+            border-radius: 6px !important;
+            margin: 1px 0 !important;
+            padding: 4px !important;
+            min-height: 30px !important;
+            border: none !important;
+            opacity: 0.9 !important;
+        }
+
+        .fc-time-grid .fc-slats td {
+            height: 40px !important;
+        }
+
+        .fc-time-grid-event.fc-short {
+            min-height: 30px !important;
+        }
+
+        .fc-time-grid-event .fc-content {
+            padding: 2px 4px !important;
+            white-space: normal !important;
+        }
+
+        .fc-timeline-event {
+            min-height: 30px !important;
+        }
+
+        .event-approved {
+            background: linear-gradient(135deg, #059669, #10B981) !important;
+            border-left: 3px solid #047857 !important;
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2) !important;
+        }
+
+        .event-pending {
+            background: linear-gradient(135deg, #D97706, #F59E0B) !important;
+            border-left: 3px solid #B45309 !important;
+            box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2) !important;
+        }
+
+        .event-rejected {
+            background: linear-gradient(135deg, #DC2626, #EF4444) !important;
+            border-left: 3px solid #B91C1C !important;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2) !important;
+        }
+
+        .fc-event:hover {
+            opacity: 1 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .event-approved-1 {
+            background: linear-gradient(135deg, #059669, #10B981) !important;
+        }
+
+        .event-approved-2 {
+            background: linear-gradient(135deg, #047857, #059669) !important;
+        }
+
+        .event-approved-3 {
+            background: linear-gradient(135deg, #065F46, #047857) !important;
+        }
+
+        .event-approved-4 {
+            background: linear-gradient(135deg, #064E3B, #065F46) !important;
+        }
+
+        .event-approved-5 {
+            background: linear-gradient(135deg, #064e3b, #064E3B) !important;
+        }
+
+        .event-pending-1 {
+            background: linear-gradient(135deg, #F59E0B, #FBBF24) !important;
+        }
+
+        .event-pending-2 {
+            background: linear-gradient(135deg, #D97706, #F59E0B) !important;
+        }
+
+        .event-pending-3 {
+            background: linear-gradient(135deg, #B45309, #D97706) !important;
+        }
+
+        .event-pending-4 {
+            background: linear-gradient(135deg, #92400E, #B45309) !important;
+        }
+
+        .event-pending-5 {
+            background: linear-gradient(135deg, #78350F, #92400E) !important;
+        }
+
+        .event-rejected-1 {
+            background: linear-gradient(135deg, #EF4444, #F87171) !important;
+        }
+
+        .event-rejected-2 {
+            background: linear-gradient(135deg, #DC2626, #EF4444) !important;
+        }
+
+        .event-rejected-3 {
+            background: linear-gradient(135deg, #B91C1C, #DC2626) !important;
+        }
+
+        .event-rejected-4 {
+            background: linear-gradient(135deg, #991B1B, #B91C1C) !important;
+        }
+
+        .event-rejected-5 {
+            background: linear-gradient(135deg, #7F1D1D, #991B1B) !important;
+        }
+
+        .event-status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-approved {
+            background: linear-gradient(135deg, #059669, #10B981);
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #D97706, #F59E0B);
+        }
+
+        .status-rejected {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            var colorIndices = {};
+
+            $('#calendar').fullCalendar({
+                events: '/Instructor/Dashboard?handler=MyCalendarEvents',
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'agendaWeek,agendaDay'
+                },
+                locale: 'tr',
+                views: {
+                    month: {
+                        titleFormat: 'MMMM YYYY',
+                        eventLimit: 3
+                    },
+                    agendaWeek: {
+                        titleFormat: 'D MMMM YYYY',
+                        slotLabelFormat: 'HH:mm'
+                    },
+                    agendaDay: {
+                        titleFormat: 'D MMMM YYYY',
+                        slotLabelFormat: 'HH:mm'
+                    }
+                },
+                defaultView: 'agendaWeek',
+                allDaySlot: false,
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00',
+                scrollTime: '08:00:00',
+                minTime: '08:00:00',
+                maxTime: '20:00:00',
+                timeFormat: 'HH:mm',
+                hiddenDays: [0, 6],
+                firstDay: 1,
+                height: 650,
+                navLinks: true,
+                nowIndicator: true,
+                dayClick: function (date, jsEvent, view) {
+                    $('#calendar').fullCalendar('changeView', 'agendaDay', date);
+                },
+                eventRender: function (event, element) {
+                    var timeKey = event.start.format('YYYY-MM-DD-HH:mm');
+                    if (!colorIndices[timeKey]) {
+                        colorIndices[timeKey] = 1;
+                    } else {
+                        colorIndices[timeKey] = (colorIndices[timeKey] % 5) + 1;
+                    }
+
+                    var colorIndex = colorIndices[timeKey];
+
+                    element.css({
+                        'border': 'none',
+                        'color': '#fff',
+                        'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'
+                    });
+
+                    if (event.color === '#28a745') {
+                        element.addClass(`event-approved-${colorIndex}`);
+                        element.find('.fc-title').prepend('<i class="bi bi-check-circle me-1"></i>');
+                    } else if (event.color === '#ffc107') {
+                        element.addClass(`event-pending-${colorIndex}`);
+                        element.find('.fc-title').prepend('<i class="bi bi-hourglass-split me-1"></i>');
+                    } else {
+                        element.addClass(`event-rejected-${colorIndex}`);
+                        element.find('.fc-title').prepend('<i class="bi bi-x-circle me-1"></i>');
+                    }
+
+                    element.find('.fc-content').css({
+                        'padding': '4px 8px',
+                        'font-size': '0.9rem'
+                    });
+
+                    element.find('.fc-time').css({
+                        'font-weight': '600',
+                        'opacity': '0.9'
+                    });
+
+                    element.find('.fc-title').css({
+                        'font-weight': '500',
+                        'display': 'block',
+                        'margin-top': '2px'
+                    });
+
+                    var tooltipTitle = `${event.title}\n${event.startTime} - ${event.endTime}`;
+                    element.attr('data-bs-toggle', 'tooltip');
+                    element.attr('data-bs-placement', 'top');
+                    element.attr('title', tooltipTitle);
+                },
+
+                viewRender: function (view, element) {
+                    colorIndices = {};
+                },
+
+                eventClick: function (event, jsEvent, view) {
+                    var $modal = $('#eventDetailModal');
+
+                    $modal.find('.event-title').text(event.title);
+                    $modal.find('.event-classroom').text(event.classroom);
+                    $modal.find('.event-start').text(event.startTime);
+                    $modal.find('.event-end').text(event.endTime);
+                    $modal.find('.event-term').text(event.termRange);
+
+                    var $statusIndicator = $modal.find('.event-status-indicator');
+                    var $statusText = $modal.find('.event-status');
+                    $statusIndicator.removeClass('status-approved status-pending status-rejected');
+
+                    if (event.color === '#28a745') {
+                        $statusIndicator.addClass('status-approved');
+                        $statusText.html('<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Approved</span>');
+                    } else if (event.color === '#ffc107') {
+                        $statusIndicator.addClass('status-pending');
+                        $statusText.html('<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>');
+                    } else {
+                        $statusIndicator.addClass('status-rejected');
+                        $statusText.html('<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>');
+                    }
+
+                    var $modifyBtn = $modal.find('.modify-btn');
+                    var $cancelBtn = $modal.find('.cancel-btn');
+
+                    if (event.status === 'Pending' || event.status === 'Approved') {
+                        $modifyBtn.show().attr('data-id', event.id);
+                        $cancelBtn.show().attr('data-id', event.id);
+                    } else {
+                        $modifyBtn.hide();
+                        $cancelBtn.hide();
+                    }
+
+                    $modifyBtn.off('click').on('click', function () {
+                        $modal.modal('hide');
+                        $(`#modifyModal-${event.id}`).modal('show');
+                    });
+
+                    $cancelBtn.off('click').on('click', function () {
+                        if (confirm('Are you sure you want to cancel this reservation?')) {
+                            $(`form[action="/Instructor/Dashboard?handler=RequestCancellation&id=${event.id}"]`).submit();
+                        }
+                    });
+
+                    $modal.modal('show');
+                }
+            });
+
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            $("#reservationSearch").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                $("#reservationsTable tbody tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
+}

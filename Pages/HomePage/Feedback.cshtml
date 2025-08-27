@@ -1,0 +1,98 @@
+@page
+@model ClassroomReservationSystem.Pages.Instructor.FeedbackModel
+@{
+    ViewData["Title"] = "Activity Feedback";
+}
+
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-light border-bottom rounded-top-4">
+                <h5 class="mb-0">Send Activity Feedback</h5>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success rounded-3" role="alert">
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger rounded-3" role="alert">
+                        <strong>Error:</strong> Please correct the following errors.
+                    </div>
+                }
+
+                <form method="post" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label asp-for="FeedbackVM.ReservationId" class="form-label">Activity <span class="text-danger">*</span></label>
+                        <select asp-for="FeedbackVM.ReservationId" class="form-select rounded-3 shadow-sm" required>
+                            <option value="">-- Select Activity --</option>
+                            @foreach (var reservation in Model.UserReservations)
+                            {
+                                <option value="@reservation.Id">
+                                    @(reservation.Activity ?? "No Activity") - @(reservation.Classroom?.Name ?? "Unknown Classroom")
+                                    (@reservation.StartTime.ToString(@"hh\:mm") - @reservation.EndTime.ToString(@"hh\:mm"))
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="FeedbackVM.ReservationId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Rating (1-5) <span class="text-danger">*</span></label>
+                        <div id="star-rating" class="mb-1">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span class="star" data-value="@i">&#9734;</span>
+                            }
+                        </div>
+                        <input type="hidden" asp-for="FeedbackVM.Rating" />
+                        <span asp-validation-for="FeedbackVM.Rating" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="FeedbackVM.Comment" class="form-label">Comment <span class="text-danger">*</span></label>
+                        <textarea asp-for="FeedbackVM.Comment" class="form-control rounded-3 shadow-sm" rows="4" placeholder="Your comment about the activity..."></textarea>
+                        <span asp-validation-for="FeedbackVM.Comment" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.querySelector('input[name="FeedbackVM.Rating"]');
+
+        stars.forEach((star, index) => {
+            star.addEventListener('click', () => {
+                const rating = index + 1;
+                ratingInput.value = rating;
+
+                stars.forEach((s, i) => {
+                    s.innerHTML = i < rating ? '★' : '☆';
+                    s.classList.toggle('text-warning', i < rating);
+                });
+            });
+        });
+    </script>
+    <style>
+        .star {
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            color: #ccc;
+        }
+        .text-warning {
+            color: #ffc107 !important;
+        }
+    </style>
+}

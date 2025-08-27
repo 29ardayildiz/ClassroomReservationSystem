@@ -1,0 +1,63 @@
+﻿@page
+@model ClassroomReservationSystem.Areas.Identity.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Log in";
+}
+
+
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+    data-sidebar-position="fixed" data-header-position="fixed">
+    <div
+        class="position-relative overflow-hidden text-bg-light min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="d-flex align-items-center justify-content-center w-100">
+            <div class="row justify-content-center w-100">
+                <div class="col-md-10 col-lg-8 col-xxl-5">
+                    <div class="card mb-0" style="padding: 1px;">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <img src="~/images/logo.png" alt="Logo" class="img-fluid" style="height: 120px;">
+                            </div>
+                            <p class="text-center">Classroom Reservation System</p>
+                            <form id="account" method="post">
+                                <div class="mb-3">
+                                    <label for="exampleInputEmail1" class="form-label">Email</label>
+                                    <input asp-for="Input.Email" class="form-control" autocomplete="username" />
+                                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="exampleInputPassword1" class="form-label">Password</label>
+                                    <input asp-for="Input.Password" class="form-control"
+                                        autocomplete="current-password" />
+                                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="form-check">
+                                        <input asp-for="Input.RememberMe" class="form-check-input primary" />
+                                        <label class="form-check-label text-dark" for="flexCheckChecked">Remeber this
+                                            Device
+                                    </div>
+                                </div>
+                                <button id="login-submit" type="submit"
+                                    class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2">Log in</button>
+
+
+                                <div class="d-flex justify-content-between gap-3">
+                                    <a asp-page="/HomePage/Feedback" class="btn btn-warning flex-fill" style="max-width: 200px;">
+                                        <i class="bi bi-plus-circle"></i> Send Feedback
+                                    </a>
+                                    <a asp-page="/HomePage/Contact" class="btn btn-warning flex-fill" style="max-width: 200px;">
+                                        <i class="bi bi-list-check"></i> Contact Us
+                                    </a>
+                                </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

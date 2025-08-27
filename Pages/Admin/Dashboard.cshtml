@@ -1,0 +1,73 @@
+@page
+@model ClassroomReservationSystem.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Panel";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card shadow-sm bg-primary text-white rounded-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Classrooms</h5>
+                <p class="display-5 fw-bold">@Model.TotalClassrooms</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm bg-info text-white rounded-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Reservations</h5>
+                <p class="display-5 fw-bold">@Model.TotalReservations</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm bg-success text-white rounded-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Approved</h5>
+                <p class="display-5 fw-bold">@Model.GetApprovedPercentage()%</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm bg-danger text-white rounded-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Rejected</h5>
+                <p class="display-5 fw-bold">@Model.GetRejectedPercentage()%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row ">
+    <div class="col-md-10 offset-md-1">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-header bg-light border-bottom rounded-top-4">
+                <h5 class="mb-0">Active Academic Term</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Term Name</th>
+                            <th class="text-center">Start Date</th>
+                            <th class="text-end">End Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var term in Model.ActiveAcademicTerms)
+                        {
+                            <tr>
+                                <td>@term.Name</td>
+                                <td class="text-center">@term.StartDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-end">@term.EndDate.ToString("dd/MM/yyyy")</td>
+                                
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
